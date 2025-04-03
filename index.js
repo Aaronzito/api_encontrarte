@@ -4,10 +4,12 @@ import mysql from 'mysql2';
 import bcrypt from 'bcrypt';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
-import 'dotenv/config';
+import Stripe from 'stripe';
+import dotenv from 'dotenv';
+
+
 
 const app = express();
-
 const db = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -15,7 +17,7 @@ const db = mysql.createPool({
     database: process.env.DB_NAME,
     port: process.env.DB_PORT,
 });
-
+ 
 db.getConnection((err, connection) => {
     if (err) {
         console.error('Error de conexión a la base de datos:', err);
@@ -28,13 +30,56 @@ db.getConnection((err, connection) => {
 app.use(bodyParser.json());
 app.use(express.json());
 app.use(cors());
+dotenv.config();
 
 app.listen(4000, () => {
     console.log('Servidor corriendo en el puerto 4000');
 });
 
+//-----------------------------------------------------------------
+
+app.get('/stripe-success', (req, res) => {
+    res.redirect('miapp://success');
+});
+
+app.get('/stripe-cancel', (req, res) => {
+    res.redirect('miapp://cancel');
+});
 
 
+const stripe = new Stripe('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');
+
+app.post('/create-checkout-session', async (req, res) => {
+    try {
+        const { amount } = req.body; // 🔥 Recibe el monto desde el frontend
+
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card','oxxo'],
+            line_items: [
+                {
+                    price_data: {
+                        currency: 'mxn', 
+                        product_data: { name: 'Compra en la tienda' },
+                        unit_amount: amount, 
+                    },
+                    quantity: 1,
+                },
+            ],
+            mode: 'payment',
+            success_url: 'https://dog0s0gwksgs8osw04csg0cs.31.170.165.191.sslip.io/stripe-success',
+            cancel_url: 'https://dog0s0gwksgs8osw04csg0cs.31.170.165.191.sslip.io/stripe-cancel',
+            
+        });
+
+        res.json({ url: session.url }); 
+    } catch (error) {
+        console.error('Error al crear la sesión de pago:', error);
+        res.status(500).json({ error: 'Error al procesar el pago' });
+    }
+});
+
+
+//--------------------------------------------------------------
 app.get('/users', (req, res) => {
     db.query('SELECT * FROM users', (err, results) => {
         if (err) return res.status(500).send(err);
@@ -100,8 +145,8 @@ app.post('/register', (req, res) => {
         }
         console.log('Contraseña encriptada:', hashedPassword);
 
-        db.query('INSERT INTO users (name, lastname, email, password, address, city, phone) VALUES (?, ?, ?, ?, ?, ?, ?)', 
-        [name, lastname, email, hashedPassword, address, city, phone], 
+        db.query('INSERT INTO users (name, lastname, email, password, address, city, phone, birthday) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
+        [name, lastname, email, hashedPassword, address, city, phone, birth], 
         (err, result) => {
             if (err) {
                 console.error('Error al insertar el usuario:', err);
@@ -295,3 +340,4 @@ app.post('/api/bid', (req, res) => {
             res.json({ success: true, newBid: bidAmount });
         });
     });
+
