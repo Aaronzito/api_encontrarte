@@ -145,8 +145,8 @@ app.post('/register', (req, res) => {
         }
         console.log('Contraseña encriptada:', hashedPassword);
 
-        db.query('INSERT INTO users (name, lastname, email, password, address, city, phone, birthday) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
-        [name, lastname, email, hashedPassword, address, city, phone, birth], 
+        db.query('INSERT INTO users (name, lastname, email, password, address, city, phone) VALUES (?, ?, ?, ?, ?, ?, ?)', 
+        [name, lastname, email, hashedPassword, address, city, phone], 
         (err, result) => {
             if (err) {
                 console.error('Error al insertar el usuario:', err);
