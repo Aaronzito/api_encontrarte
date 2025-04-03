@@ -132,7 +132,7 @@ app.get('/categorias/:id', (req, res) => {
 
 
 app.post('/register', (req, res) => {
-    const { name, lastname, email, pass, address, city, birth, phone } = req.body;
+    const { name, lastname, email, pass, address, city, phone } = req.body;
 
     if (!email || !pass) {
         return res.status(400).json({ message: 'Email y contraseña son requeridos' });
